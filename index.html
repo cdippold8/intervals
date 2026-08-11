@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#0a0a0c" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>INTERVALS</title>
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+<div id="app">
+
+  <!-- SETUP SCREEN -->
+  <section class="screen active" id="screen-setup">
+    <div class="panel">
+
+      <div class="panel-header">
+        <span class="panel-title">NEW RUN</span>
+        <button type="button" class="chip-btn" id="clearBtn">CLEAR</button>
+      </div>
+
+      <div class="grille" aria-hidden="true"></div>
+
+      <div class="panel-body">
+
+        <div class="setup-row">
+          <label class="setup-field">
+            <span class="setup-label">Warm up</span>
+            <span class="setup-input-wrap">
+              <input type="number" id="warmupMin" min="0" step="0.5" inputmode="decimal" placeholder="0" />
+              <span class="unit">min</span>
+            </span>
+          </label>
+        </div>
+
+        <div class="setup-divider">
+          <span>INTERVAL</span>
+        </div>
+
+        <div class="setup-row">
+          <label class="setup-field">
+            <span class="setup-label">Every</span>
+            <span class="setup-input-wrap">
+              <input type="number" id="everyMin" min="0.5" step="0.5" inputmode="decimal" placeholder="—" />
+              <span class="unit">min</span>
+            </span>
+          </label>
+          <label class="setup-field">
+            <span class="setup-label">For</span>
+            <span class="setup-input-wrap">
+              <input type="number" id="forMin" min="0.5" step="0.5" inputmode="decimal" placeholder="—" />
+              <span class="unit">min</span>
+            </span>
+          </label>
+        </div>
+        <p class="setup-hint" id="intervalHint">Set your fast &amp; slow split</p>
+
+        <div class="setup-divider">
+          <span>&nbsp;</span>
+        </div>
+
+        <div class="setup-row">
+          <label class="setup-field">
+            <span class="setup-label">Cool down</span>
+            <span class="setup-input-wrap">
+              <input type="number" id="cooldownMin" min="0" step="0.5" inputmode="decimal" placeholder="0" />
+              <span class="unit">min</span>
+            </span>
+          </label>
+        </div>
+
+      </div>
+
+      <div class="panel-footer">
+        <button type="button" class="big-btn start-btn" id="startBtn" disabled>START</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- RUNNING / TIME TRACKING SCREEN -->
+  <section class="screen" id="screen-run">
+    <div class="panel" id="runPanel">
+
+      <div class="panel-header">
+        <span class="led-dot" id="liveDot" aria-hidden="true"></span>
+        <span class="panel-title">ON AIR</span>
+        <button type="button" class="chip-btn chip-btn-danger" id="stopBtn">STOP</button>
+      </div>
+
+      <div class="grille" aria-hidden="true"></div>
+
+      <div class="run-total-row">
+        <span class="run-total-label">TOTAL RUN</span>
+        <span class="run-total-clock" id="totalClock">00:00</span>
+      </div>
+
+      <div class="run-display" id="runDisplay">
+        <div class="phase-label" id="phaseLabel">WARM UP</div>
+        <div class="phase-clock" id="phaseClock">00:00</div>
+        <div class="get-ready" id="getReady">GET READY</div>
+      </div>
+
+      <div class="run-tally">
+        <span><span class="tally-dot fast"></span>FAST <b id="fastTallyRun">0</b></span>
+        <span><span class="tally-dot slow"></span>SLOW <b id="slowTallyRun">0</b></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- DONE SCREEN -->
+  <section class="screen" id="screen-done">
+    <div class="panel">
+
+      <div class="panel-header">
+        <span class="panel-title">DONE!</span>
+        <button type="button" class="chip-btn" id="newBtnTop">NEW</button>
+      </div>
+
+      <div class="grille" aria-hidden="true"></div>
+
+      <div class="panel-body done-body">
+        <div class="done-total-label">TOTAL RUN TIME</div>
+        <div class="done-total-clock" id="doneTotalClock">00:00</div>
+
+        <div class="done-tally">
+          <div class="done-tally-item">
+            <span class="tally-dot fast"></span>
+            <span class="done-tally-label">FAST</span>
+            <span class="done-tally-num" id="doneFastCount">0</span>
+          </div>
+          <div class="done-tally-item">
+            <span class="tally-dot slow"></span>
+            <span class="done-tally-label">SLOW</span>
+            <span class="done-tally-num" id="doneSlowCount">0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-footer">
+        <button type="button" class="big-btn" id="newRunBtn">NEW RUN</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
