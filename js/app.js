@@ -17,12 +17,18 @@
     cooldown: "phase-cooldown",
   };
 
+  // Each phase has a pool of clips — one is picked at random every time
+  // that phase starts, so a run doesn't sound identical lap to lap.
   var PHASE_AUDIO = {
-    warmup: "assets/audio/warmup.mp3",
-    fast: "assets/audio/fast-interval.mp3",
-    slow: "assets/audio/slow-interval.mp3",
-    cooldown: "assets/audio/cooldown.mp3",
+    warmup: ["assets/audio/warmup.mp3", "assets/audio/warmup-2.mp3"],
+    fast: ["assets/audio/fast-interval.mp3", "assets/audio/fast-interval-2.mp3"],
+    slow: ["assets/audio/slow-interval.mp3", "assets/audio/slow-interval-2.mp3"],
+    cooldown: ["assets/audio/cooldown.mp3", "assets/audio/cooldown-2.mp3"],
   };
+
+  function pickRandom(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
 
   var WARNING_LEAD_SEC = 10;
 
@@ -428,7 +434,9 @@
 
   function preloadAudio() {
     Object.keys(PHASE_AUDIO).forEach(function (key) {
-      loadBuffer(PHASE_AUDIO[key]);
+      PHASE_AUDIO[key].forEach(function (url) {
+        loadBuffer(url);
+      });
     });
   }
 
@@ -448,8 +456,9 @@
     var ctx = getAudioContext();
     if (!ctx) return;
     if (ctx.state === "suspended") ctx.resume();
-    var url = PHASE_AUDIO[type];
-    if (!url) return;
+    var pool = PHASE_AUDIO[type];
+    if (!pool || !pool.length) return;
+    var url = pickRandom(pool);
     loadBuffer(url).then(function (buffer) {
       playBuffer(buffer, 0.9);
     });
