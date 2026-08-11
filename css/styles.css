@@ -179,6 +179,16 @@ body {
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--text-dim);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.setup-sublabel {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: #55555e;
 }
 
 .setup-input-wrap {

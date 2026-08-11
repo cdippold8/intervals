@@ -60,24 +60,40 @@
     var cooldownMin = parseFloat(cooldownInput.value);
     if (isNaN(cooldownMin) || cooldownMin < 0) cooldownMin = 0;
 
+    // "Every X min" = the length of each fast segment AND each slow segment.
+    // "For X min" = the total time to keep alternating fast/slow before cool down.
     var everyMin = parseFloat(everyInput.value);
     var forMin = parseFloat(forInput.value);
     var valid = !isNaN(everyMin) && everyMin > 0 && !isNaN(forMin) && forMin > 0;
-
-    var slowMin = valid ? Math.max(0, everyMin - forMin) : 0;
 
     return {
       valid: valid,
       warmupMin: warmupMin,
       warmupSec: Math.round(warmupMin * 60),
       everyMin: valid ? everyMin : 0,
+      everySec: valid ? Math.round(everyMin * 60) : 0,
       forMin: valid ? forMin : 0,
       forSec: valid ? Math.round(forMin * 60) : 0,
-      slowMin: slowMin,
-      slowSec: Math.round(slowMin * 60),
       cooldownMin: cooldownMin,
       cooldownSec: Math.round(cooldownMin * 60),
     };
+  }
+
+  // Simulates the fast/slow alternation (starting with fast) to report how
+  // many laps of each a given setup will produce — mirrors the run loop's
+  // own stopping rule so the setup screen's preview always matches the run.
+  function estimateLaps(cfg) {
+    var cumulative = 0;
+    var fastLaps = 0;
+    var slowLaps = 0;
+    var isFast = true;
+    while (cumulative < cfg.forSec) {
+      cumulative += cfg.everySec;
+      if (isFast) fastLaps++;
+      else slowLaps++;
+      isFast = !isFast;
+    }
+    return { fastLaps: fastLaps, slowLaps: slowLaps, totalSec: cumulative };
   }
 
   function refreshSetupUI() {
@@ -85,11 +101,12 @@
     startBtn.disabled = !cfg.valid;
 
     if (!cfg.valid) {
-      intervalHint.textContent = "Set your fast & slow split";
-    } else if (cfg.forMin >= cfg.everyMin) {
-      intervalHint.textContent = "Fast " + formatMin(cfg.forMin) + " back-to-back — no slow gap";
+      intervalHint.textContent = "Set your interval length & total time";
     } else {
-      intervalHint.textContent = "Fast " + formatMin(cfg.forMin) + " / Slow " + formatMin(cfg.slowMin) + " each lap";
+      var laps = estimateLaps(cfg);
+      intervalHint.textContent =
+        "Fast " + formatMin(cfg.everyMin) + " / Slow " + formatMin(cfg.everyMin) +
+        " — " + laps.fastLaps + " fast + " + laps.slowLaps + " slow (" + formatClock(laps.totalSec) + " total)";
     }
 
     saveSetup();
@@ -173,16 +190,9 @@
   var tickHandle = null;
   var wakeLock = null;
 
-  function nextPhaseType(current, cfg) {
-    if (current === "warmup") return "fast";
-    if (current === "fast") return cfg.slowSec > 0 ? "slow" : "fast";
-    return "fast"; // from slow
-  }
-
   function durationFor(type, cfg) {
     if (type === "warmup") return cfg.warmupSec;
-    if (type === "fast") return cfg.forSec;
-    if (type === "slow") return cfg.slowSec;
+    if (type === "fast" || type === "slow") return cfg.everySec;
     if (type === "cooldown") return cfg.cooldownSec;
     return 0;
   }
@@ -200,6 +210,7 @@
       phaseElapsed: 0,
       phaseDuration: durationFor(initialPhase, cfg),
       totalElapsed: 0,
+      intervalElapsed: 0, // time spent in fast/slow laps so far, vs. cfg.forSec target
       fastCount: 0,
       slowCount: 0,
       warned: false,
@@ -265,11 +276,27 @@
       return;
     }
 
+    if (finished === "warmup") {
+      transitionTo("fast");
+      return;
+    }
+
+    // finished a fast or slow lap
     if (finished === "fast") runState.fastCount++;
     if (finished === "slow") runState.slowCount++;
+    runState.intervalElapsed += runState.phaseDuration;
 
-    var next = nextPhaseType(finished, runState.cfg);
-    transitionTo(next);
+    if (runState.intervalElapsed >= runState.cfg.forSec) {
+      // hit the configured total interval time — move on to cool down
+      if (runState.cfg.cooldownSec > 0) {
+        transitionTo("cooldown");
+      } else {
+        finishRun();
+      }
+      return;
+    }
+
+    transitionTo(finished === "fast" ? "slow" : "fast");
   }
 
   function transitionTo(type) {
