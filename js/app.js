@@ -20,10 +20,10 @@
   // Each phase has a pool of clips — one is picked at random every time
   // that phase starts, so a run doesn't sound identical lap to lap.
   var PHASE_AUDIO = {
-    warmup: ["assets/audio/warmup.mp3", "assets/audio/warmup-2.mp3"],
-    fast: ["assets/audio/fast-interval.mp3", "assets/audio/fast-interval-2.mp3"],
-    slow: ["assets/audio/slow-interval.mp3", "assets/audio/slow-interval-2.mp3"],
-    cooldown: ["assets/audio/cooldown.mp3", "assets/audio/cooldown-2.mp3"],
+    warmup: ["assets/audio/warmup.mp3", "assets/audio/warmup-2.mp3", "assets/audio/warmup-3.mp3"],
+    fast: ["assets/audio/fast-interval.mp3", "assets/audio/fast-interval-2.mp3", "assets/audio/fast-interval-3.mp3"],
+    slow: ["assets/audio/slow-interval.mp3", "assets/audio/slow-interval-2.mp3", "assets/audio/slow-interval-3.mp3"],
+    cooldown: ["assets/audio/cooldown.mp3", "assets/audio/cooldown-2.mp3", "assets/audio/cooldown-3.mp3"],
   };
 
   function pickRandom(arr) {
