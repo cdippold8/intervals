@@ -149,9 +149,20 @@
     }
   }
 
-  [warmupInput, everyInput, forInput, cooldownInput].forEach(function (input) {
+  var setupInputs = [warmupInput, everyInput, forInput, cooldownInput];
+
+  setupInputs.forEach(function (input) {
     input.addEventListener("input", refreshSetupUI);
   });
+
+  // Disabling (rather than just hiding) these inputs while a run is active
+  // detaches them from iOS's text-undo manager, so arm-swinging while
+  // running can't trigger a "Shake to Undo Typing" system prompt.
+  function setSetupInputsLocked(locked) {
+    setupInputs.forEach(function (input) {
+      input.disabled = locked;
+    });
+  }
 
   clearBtn.addEventListener("click", function () {
     warmupInput.value = "";
@@ -206,6 +217,11 @@
   function startRun() {
     var cfg = computeConfig();
     if (!cfg.valid) return;
+
+    if (document.activeElement && document.activeElement.blur) {
+      document.activeElement.blur();
+    }
+    setSetupInputsLocked(true);
 
     preloadAudio();
 
@@ -387,6 +403,7 @@
   }
 
   function goToNewRun() {
+    setSetupInputsLocked(false);
     showScreen("setup");
     refreshSetupUI();
   }
@@ -408,6 +425,20 @@
       if (Ctx) audioCtx = new Ctx();
     }
     return audioCtx;
+  }
+
+  // A single shared cursor (in AudioContext time) that every sound —
+  // warning beeps, phase clips, the finish fanfare — reserves a slot from,
+  // so nothing is ever scheduled to play on top of anything else, even if
+  // two cues are triggered in the same instant (e.g. a very short phase).
+  var audioQueueEndTime = 0;
+
+  function reserveAudioSlot(durationSec) {
+    var ctx = getAudioContext();
+    if (!ctx) return 0;
+    var startTime = Math.max(ctx.currentTime, audioQueueEndTime);
+    audioQueueEndTime = startTime + durationSec;
+    return startTime;
   }
 
   function loadBuffer(url) {
@@ -443,13 +474,14 @@
   function playBuffer(buffer, volume) {
     var ctx = getAudioContext();
     if (!ctx || !buffer) return;
+    var startTime = reserveAudioSlot(buffer.duration);
     var source = ctx.createBufferSource();
     source.buffer = buffer;
     var gain = ctx.createGain();
     gain.gain.value = volume != null ? volume : 0.9;
     source.connect(gain);
     gain.connect(ctx.destination);
-    source.start(0);
+    source.start(startTime);
   }
 
   function playPhaseAudio(type) {
@@ -465,11 +497,15 @@
     if (navigator.vibrate) navigator.vibrate([100, 60, 100]);
   }
 
-  function beep(freq, durationMs, delayMs, type) {
+  var BEEP_TAIL_SEC = 0.05; // matches the decay ramp added after each tone's audible portion
+
+  function beep(freq, durationMs, type) {
     var ctx = getAudioContext();
     if (!ctx) return;
     if (ctx.state === "suspended") ctx.resume();
-    var startTime = ctx.currentTime + (delayMs || 0) / 1000;
+    // Reserve the tone's full lifetime (audible + decay tail) so the next
+    // queued sound can never start before this one has actually finished.
+    var startTime = reserveAudioSlot(durationMs / 1000 + BEEP_TAIL_SEC);
     var osc = ctx.createOscillator();
     var gain = ctx.createGain();
     osc.type = type || "square";
@@ -480,14 +516,14 @@
     osc.connect(gain);
     gain.connect(ctx.destination);
     osc.start(startTime);
-    osc.stop(startTime + durationMs / 1000 + 0.05);
+    osc.stop(startTime + durationMs / 1000 + BEEP_TAIL_SEC);
   }
 
   function playWarningTone() {
     try {
-      beep(1046, 90, 0);
-      beep(1046, 90, 160);
-      beep(1046, 90, 320);
+      beep(1046, 90);
+      beep(1046, 90);
+      beep(1046, 90);
       if (navigator.vibrate) navigator.vibrate([60, 40, 60, 40, 60]);
     } catch (e) {
       /* ignore */
@@ -496,10 +532,10 @@
 
   function playDoneFanfare() {
     try {
-      beep(784, 130, 0);
-      beep(988, 130, 150);
-      beep(1175, 130, 300);
-      beep(1568, 260, 460);
+      beep(784, 130);
+      beep(988, 130);
+      beep(1175, 130);
+      beep(1568, 260);
       if (navigator.vibrate) navigator.vibrate([120, 80, 120, 80, 220]);
     } catch (e) {
       /* ignore */
